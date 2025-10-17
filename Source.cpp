@@ -86,20 +86,21 @@ int main() {
     // Calls readBinary, passing readLength by reference to be updated
     int* readArray = readBinary(readLength);
     // Checks if the array was read successfully
-    if (readArray != nullptr) {
+    if (readArray != nullptr) 
+        {
         cout << "Array of length " << readLength << " read from binary.dat." << endl;
         cout << "Values read from file:" << endl;
         // Loop to print each value in the newly read array
         for (int i = 0; i < readLength; ++i) 
         {
             cout << readArray[i] << " ";
-            // Add a newline every 20 numbers for better formatting
+            // Adds a newline every 20 numbers for better formatting
             if ((i + 1) % 20 == 0) 
             {
                 cout << endl;
             }
         }
-        cout << std::endl << endl;
+        cout << endl << endl;
         // Deletes the second dynamically created array and sets the pointer to null
         delete[] readArray;
         readArray = nullptr;
@@ -108,8 +109,9 @@ int main() {
     else 
     {
         cerr << "Program failed to read array from file." << endl;
-        return 1; // Indicate an error
+        return 1; // Indicates an error
     }
-    // Terminate the program successfully
+    // Terminates the program successfully
     return 0;
 }
+
