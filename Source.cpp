@@ -1,117 +1,163 @@
-#include <iostream> 
-#include <fstream>  
-#include <cstdlib>  
-#include <ctime>    
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <cstdlib>
+#include <ctime>
 
 using namespace std;
 
-// Defines the array size as a constant outside the functions
-const int ARRAY_SIZE = 1000;
-// createArray creates a dynamic array of 1000 integers.
-// The length is passed by pointer and updated within the function.
-int* createArray(int* length) 
+//createArray function replaced by createBinaryFile()
+//readBinary function eliminated, replaced by BinaryReader class
+//All file operations now use filename parameter rather than hardcoded binary.dat
+
+const int SIZE = 1000; // removed const int ARRAY_SIZE
+
+// Modified writeBinary function with filename parameter
+void writeBinary(string filename, int* values, int length) 
 {
-    // Allocates memory for ARRAY_SIZE integers on the heap
-    int* dynamicArray = new int[ARRAY_SIZE];
-    // Initializes the array with random numbers in the range [0, 999]
-    for (int i = 0; i < ARRAY_SIZE; ++i) 
-    {
-        dynamicArray[i] = rand() % 1000;
-    }
-    // Assigns the array size to the caller's length variable via the pointer
-    *length = ARRAY_SIZE;
-    // Return the pointer to the newly created array
-    return dynamicArray;
-}
-// writeBinary writes the array length and its contents to a binary file.
-void writeBinary(int* values, int length) 
-{
-    // Opens the file "binary.dat" in binary output mode
-    ofstream outFile("binary.dat", ios::binary);
-    // Checks if the file was opened successfully
-    if (!outFile.is_open()) 
-    {
-        cerr << "Error: Could not open binary.dat for writing." << endl;
-        return;
-    }
-    // Writes the length of the array first
-    outFile.write(reinterpret_cast<const char*>(&length), sizeof(length));
-    // Writes the entire array block to the file
-    outFile.write(reinterpret_cast<const char*>(values), length * sizeof(int));
-    // Closes the file
-    outFile.close();
-}
-// Function to read array data from a binary file.
-// The length is passed by reference and updated within the function.
-int* readBinary(int& length) 
-{
-    // Opens the file "binary.dat" in binary input mode
-    std::ifstream inFile("binary.dat", ios::binary);
-    // Checks if the file was opened successfully
-    if (!inFile.is_open()) 
-    {
-        cerr << "Error: Could not open binary.dat for reading." << endl;
-        length = 0; // Sets length to 0 to indicate failure
-        return nullptr; // Returns null pointer on failure
-    }
-    // Reads the first value from the file, which is the array length
-    inFile.read(reinterpret_cast<char*>(&length), sizeof(length));
-    // Creates a new dynamic array using the length read from the file
-    int* readArray = new int[length];
-    // Reads the block of integer data from the file into the new array
-    inFile.read(reinterpret_cast<char*>(readArray), length * sizeof(int));
-    // Close the file
-    inFile.close();
-    // Returns a pointer to the newly created array
-    return readArray;
-}
-// Main function to orchestrate the program flow
-int main() {
-    // Seeds the random number generator once at the start of the program
-    srand(static_cast<unsigned int>(time(0)));
-    // --- Part 1: Creates array, writes to file, and deletes ---
-    int originalLength = 0;
-    // Calls createArray, passing the address of originalLength to be updated
-    int* originalArray = createArray(&originalLength);
-    cout << "Array of length " << originalLength << " created." << endl;
-    // Calls writeBinary to save the array to a file
-    writeBinary(originalArray, originalLength);
-    cout << "Array written to binary.dat." << endl;
-    // Deletes the dynamically created array and sets the pointer to null
-    delete[] originalArray;
-    originalArray = nullptr;
-    cout << "Original array deleted." << std::endl << endl;
-    // --- Part 2: Reads from file, prints, and deletes ---
-    int readLength = 0;
-    // Calls readBinary, passing readLength by reference to be updated
-    int* readArray = readBinary(readLength);
-    // Checks if the array was read successfully
-    if (readArray != nullptr) 
-        {
-        cout << "Array of length " << readLength << " read from binary.dat." << endl;
-        cout << "Values read from file:" << endl;
-        // Loop to print each value in the newly read array
-        for (int i = 0; i < readLength; ++i) 
-        {
-            cout << readArray[i] << " ";
-            // Adds a newline every 20 numbers for better formatting
-            if ((i + 1) % 20 == 0) 
-            {
-                cout << endl;
-            }
-        }
-        cout << endl << endl;
-        // Deletes the second dynamically created array and sets the pointer to null
-        delete[] readArray;
-        readArray = nullptr;
-        cout << "Read array deleted." << endl;
-    }
-    else 
-    {
-        cerr << "Program failed to read array from file." << endl;
-        return 1; // Indicates an error
-    }
-    // Terminates the program successfully
-    return 0;
+	ofstream outFile(filename, ios::binary); // Opens file in binary mode
+	if (!outFile) // Checks if file opened successfully 
+	{
+		cerr << "Error opening file for writing: " << filename << endl;
+		return;
+	}
+	outFile.write(reinterpret_cast<const char*>(&length), sizeof(int)); // Writes the length of the array first
+	outFile.write(reinterpret_cast<const char*>(values), length * sizeof(int)); // Writes the entire array block to the file
+	outFile.close(); // Closes the file
 }
 
+// New function to create array and write to binary file
+void createBinaryFile(string filename) 
+{
+	int* arr = new int[SIZE];
+	srand(time(0));
+	for (int i = 0; i < SIZE; i++)  // initializes array with random numbers in the range [0, 999]
+	{
+		arr[i] = rand() % 1000;
+	}
+	writeBinary(filename, arr, SIZE); // calls writeBinary and writes array to file
+	delete[] arr;
+}
+
+
+class BinaryReader 
+{
+private:
+	int* values;
+	int size;
+
+	void readValues(const char* filename) // Reads binary and reinterprets as integers
+	{
+		ifstream inFile(filename, ios::binary);
+		if (!inFile) 
+		{
+			cerr << "Error opening file for reading: " << filename << endl;
+			values = nullptr;
+			size = 0;
+			return;
+		}
+		inFile.read(reinterpret_cast<char*>(&size), sizeof(int));
+		values = new int[size];
+		inFile.read(reinterpret_cast<char*>(values), size * sizeof(int));
+		inFile.close();
+	}
+
+public:
+	BinaryReader(const char* filename) : values(nullptr), size(0) 
+	{
+		readValues(filename);
+	}
+
+	~BinaryReader() // Destructor
+	{
+		delete[] values;
+	}
+
+	int* getValues() 
+	{
+		return values;
+	}
+
+	int getSize() 
+	{
+		return size;
+	}
+};
+
+
+class Analyzer 
+{
+private:
+	int* values;
+	int size;
+
+	int* cloneValues(int* src, int n) 
+	{
+		int* dest = new int[n];
+		for (int i = 0; i < n; i++) 
+		{
+			dest[i] = src[i];
+		}
+		return dest;
+	}
+
+public:
+	Analyzer(int* vals, int sz) : size(sz) 
+	{
+		values = cloneValues(vals, size);
+	}
+
+	~Analyzer() 
+	{
+		delete[] values;
+	}
+
+	string analyze() // Checks if array is empty and returns error. If data is present, calculates mean/min/max
+	{
+		if (size == 0) 
+		{
+			return "Array is empty.";
+		}
+		int minVal = values[0];
+		int maxVal = values[0];
+		double sum = 0;
+
+		for (int i = 0; i < size; i++) 
+		{
+			if (values[i] < minVal) minVal = values[i];
+			if (values[i] > maxVal) maxVal = values[i];
+			sum += values[i];
+		}
+
+		double mean = sum / size;
+		return "Mean: " + to_string(mean) + ", Min: " + to_string(minVal) + ", Max: " + to_string(maxVal);
+	}
+};
+
+
+int main() 
+{
+
+	createBinaryFile("binary.dat");
+
+	BinaryReader reader("binary.dat");
+
+	Analyzer analyzer(reader.getValues(), reader.getSize());
+
+
+	cout << "Array Analysis Results:" << endl;
+	cout << analyzer.analyze() << endl;
+	cout << "Values read from file:" << endl;
+	
+	for (int i = 0; i < reader.getSize(); ++i) // Loop to print each value
+	{
+		cout << reader.getValues()[i] << " ";
+		
+		if ((i + 1) % 25 == 0) // Adds a newline every 25 numbers for better formatting
+		{
+			cout << endl;
+		}
+	}
+
+	return 0;
+}
